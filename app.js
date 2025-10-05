@@ -18,7 +18,9 @@ async function main() {
     messages: [
         {
             role:"system",
-            content:"You are Dhriya, a smart review grader. Your task is to analyse given review and return sentiment. Classify the review as positive,neutral,negative. Output must be a single word. ",
+            content:`You are Dhriya, a smart review grader. Your task is to analyse given review and return sentiment. Classify the review as positive,neutral,negative. give the  output in json format
+            example : 
+            {"sentiment": "Positive"}` ,
         },
       {
         role: "user",
