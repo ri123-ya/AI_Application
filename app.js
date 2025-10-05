@@ -17,16 +17,41 @@ async function main() {
     //response_format:{type: "json_object"},
     model: "llama-3.3-70b-versatile",
     messages: [
-        {
-            role:"system",
-            content:"You smart personal assistant who answers the asked questions" ,
-        },
+      {
+        role: "system",
+        content: "You smart personal assistant who answers the asked questions",
+      },
       {
         role: "user",
         content: "When was iPhone 16 launched?",
+      },
+    ],
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "get_weather",
+          description: "Get the current weather for a location",
+          parameters: {
+            type: "object",
+            properties: {
+              query: {
+                type: "string",
+                description: "The Search query to perform Search on",
+              },
+            },
+            required: ["query"],
+          },
+        },
       },
     ],
   });
   console.log(completion.choices[0].message.content);
 }
 main();
+
+async function webSearch({ query }) {
+  //use Travily Api to search the web
+
+  return "Iphone was Launched on 17th May 2002";
+}
