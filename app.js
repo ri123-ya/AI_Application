@@ -19,95 +19,72 @@ Never call the same tool again for the same query.`,
     },
     {
       role: "user",
-      content: "When was iPhone 16 launched?",
+      content: "What is the current weather in Indore?",
+      //"When was iPhone 16 launched?"
     },
   ];
-  const completion = await groq.chat.completions.create({
-    temperature: 0,
-    //top_p: 0.2, //either use this or temperature
-    //stop: 'ga', // output will be Ne
-    // max_completion_tokens: 1000,
-    // max_tokens: '',
-    // frequency_penalty:1,
-    // presence_penalty:1,
-    //response_format:{type: "json_object"},
-    model: "llama-3.3-70b-versatile",
-    messages: messages,
-    tools: [
-      {
-        type: "function",
-        function: {
-          name: "get_search",
-          description: "Search the correct  latest information from the web",
-          parameters: {
-            type: "object",
-            properties: {
-              query: {
-                type: "string",
-                description: "The Search query to perform Search on",
+   
+  //for LLM to call tools multiple times if needed
+  while (true) {
+    const completion = await groq.chat.completions.create({
+      temperature: 0,
+      //top_p: 0.2, //either use this or temperature
+      //stop: 'ga', // output will be Ne
+      // max_completion_tokens: 1000,
+      // max_tokens: '',
+      // frequency_penalty:1,
+      // presence_penalty:1,
+      //response_format:{type: "json_object"},
+      model: "llama-3.3-70b-versatile",
+      messages: messages,
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "get_search",
+            description: "Search the correct  latest information from the web",
+            parameters: {
+              type: "object",
+              properties: {
+                query: {
+                  type: "string",
+                  description: "The Search query to perform Search on",
+                },
               },
+              required: ["query"],
             },
-            required: ["query"],
           },
         },
-      },
-    ],
-    tool_choice: "auto",
-  });
+      ],
+      tool_choice: "auto",
+    });
 
-  messages.push(completion.choices[0].message);
-  const toolCalls = completion.choices[0].message.tool_calls;
+    messages.push(completion.choices[0].message);
+    const toolCalls = completion.choices[0].message.tool_calls;
 
-  if (!toolCalls) {
-    console.log(`Assistant: ${completion.choices[0].message.content}`);
-    return;
-  }
+    if (!toolCalls) {
+      console.log(`Assistant: ${completion.choices[0].message.content}`);
+      break;// exit the loop if no tool calls
+    }
 
-  for (const tool of toolCalls) {
-    console.log("Tool Name: ", tool);
-    const functionName = tool.function.name;
-    const functionArgs = tool.function.arguments;
+    for (const tool of toolCalls) {
+      //console.log("Tool Name: ", tool);
+      const functionName = tool.function.name;
+      const functionArgs = tool.function.arguments;
 
-    if (functionName === "get_search") {
-      const toolResult = await webSearch(JSON.parse(functionArgs));
-      //console.log("Tool result: ", toolResult);
+      if (functionName === "get_search") {
+        const toolResult = await webSearch(JSON.parse(functionArgs));
+        //console.log("Tool result: ", toolResult);
 
-      messages.push({
-        tool_call_id: tool.id,
-        role: "tool",
-        name: functionName,
-        content: toolResult,
-      });
+        messages.push({
+          tool_call_id: tool.id,
+          role: "tool",
+          name: functionName,
+          content: toolResult,
+        });
+      }
     }
   }
-
-  const completion2 = await groq.chat.completions.create({
-    temperature: 0,
-    model: "llama-3.3-70b-versatile",
-    messages: messages,
-    tools: [
-      {
-        type: "function",
-        function: {
-          name: "get_search",
-          description: "Search the correct  latest information from the web",
-          parameters: {
-            type: "object",
-            properties: {
-              query: {
-                type: "string",
-                description: "The Search query to perform Search on",
-              },
-            },
-            required: ["query"],
-          },
-        },
-      },
-    ],
-    tool_choice: "auto",
-  });
-
-  console.log(JSON.stringify(completion2.choices[0].message, null, 2));
 }
 main();
 
