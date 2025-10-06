@@ -1,8 +1,10 @@
 import Groq from "groq-sdk";
 import dotenv from "dotenv";
+import { tavily } from "@tavily/core";
 
 dotenv.config();
 
+const tvly = tavily({ apiKey: process.env.TRAVILY_API_KEY });
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 async function main() {
@@ -47,26 +49,26 @@ async function main() {
         },
       },
     ],
-    tool_choice:"auto",
+    tool_choice: "auto",
   });
 
   const toolCalls = completion.choices[0].message.tool_calls;
 
-  if(!toolCalls){
-      console.log(`Assistant: ${completion.choices[0].message.content}`);
-      return;
+  if (!toolCalls) {
+    console.log(`Assistant: ${completion.choices[0].message.content}`);
+    return;
   }
 
-   for(const tool of toolCalls){
-       console.log("Tool Name: ", tool);
-       const functionName = tool.function.name;
-       const functionArgs = tool.function.arguments;
+  for (const tool of toolCalls) {
+    console.log("Tool Name: ", tool);
+    const functionName = tool.function.name;
+    const functionArgs = tool.function.arguments;
 
-       if(functionName === "get_search"){
-          const toolResult = await webSearch(JSON.parse(functionArgs));
-          console.log("Tool result: ", toolResult);
-       }
-   }
+    if (functionName === "get_search") {
+      const toolResult = await webSearch(JSON.parse(functionArgs));
+      console.log("Tool result: ", toolResult);
+    }
+  }
 
   //console.log(JSON.stringify(completion.choices[0].message.content,null,2));
 }
@@ -76,6 +78,9 @@ async function webSearch({ query }) {
   //use Travily Api to search the web
 
   console.log("Searching the Web.....");
+  const response = await tvly.search(query);
+
+  console.log("Response : ",response);
 
   return "Iphone was Launched on 17th May 2002";
 }
