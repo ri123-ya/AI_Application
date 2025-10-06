@@ -19,7 +19,9 @@ async function main() {
     messages: [
       {
         role: "system",
-        content: "You smart personal assistant who answers the asked questions",
+        content: `You smart personal assistant who answers the asked questions
+                   You have following tools:
+                   1. get_search({query} : {query: string}) //Search the correct  latest information from the web`,
       },
       {
         role: "user",
@@ -30,8 +32,8 @@ async function main() {
       {
         type: "function",
         function: {
-          name: "get_weather",
-          description: "Get the current weather for a location",
+          name: "get_search",
+          description: "Search the correct  latest information from the web",
           parameters: {
             type: "object",
             properties: {
@@ -45,13 +47,35 @@ async function main() {
         },
       },
     ],
+    tool_choice:"auto",
   });
-  console.log(completion.choices[0].message.content);
+
+  const toolCalls = completion.choices[0].message.tool_calls;
+
+  if(!toolCalls){
+      console.log(`Assistant: ${completion.choices[0].message.content}`);
+      return;
+  }
+
+   for(const tool of toolCalls){
+       console.log("Tool Name: ", tool);
+       const functionName = tool.function.name;
+       const functionArgs = tool.function.arguments;
+
+       if(functionName === "get_search"){
+          const toolResult = await webSearch(JSON.parse(functionArgs));
+          console.log("Tool result: ", toolResult);
+       }
+   }
+
+  //console.log(JSON.stringify(completion.choices[0].message.content,null,2));
 }
 main();
 
 async function webSearch({ query }) {
   //use Travily Api to search the web
+
+  console.log("Searching the Web.....");
 
   return "Iphone was Launched on 17th May 2002";
 }
